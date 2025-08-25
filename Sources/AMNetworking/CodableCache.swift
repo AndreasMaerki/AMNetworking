@@ -89,7 +89,7 @@ public struct CodableCache: CodableCacheProtocol {
         deleteLastFetchTimeFor(key)
       }
     } catch {
-      print("Error clearing cache files: \(error)")
+      // Silently ignore directory reading errors as cache clearing is best-effort
     }
   }
 
