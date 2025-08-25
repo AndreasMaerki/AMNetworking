@@ -1,6 +1,6 @@
 import Foundation
 
-public enum RequestError: Error, LocalizedError {
+public enum RequestError: Error, LocalizedError, Equatable {
   case invalidURL
   case missingBody
   case invalidResponse
@@ -76,6 +76,45 @@ public enum RequestError: Error, LocalizedError {
       self = .serviceUnavailable
     default:
       self = .unexpectedStatusCode(statusCode)
+    }
+  }
+
+  // MARK: - Equatable Conformance
+
+  public static func == (lhs: RequestError, rhs: RequestError) -> Bool {
+    switch (lhs, rhs) {
+    case (.invalidURL, .invalidURL),
+         (.missingBody, .missingBody),
+         (.invalidResponse, .invalidResponse),
+         (.unauthorised, .unauthorised),
+         (.forbidden, .forbidden),
+         (.notFound, .notFound),
+         (.methodNotAllowed, .methodNotAllowed),
+         (.internalServerError, .internalServerError),
+         (.badGateway, .badGateway),
+         (.serviceUnavailable, .serviceUnavailable):
+      true
+
+    case let (.unexpectedStatusCode(lhsCode), .unexpectedStatusCode(rhsCode)):
+      lhsCode == rhsCode
+
+    case let (.encodingError(lhsError), .encodingError(rhsError)):
+      lhsError.localizedDescription == rhsError.localizedDescription
+
+    case let (.decodingError(lhsError), .decodingError(rhsError)):
+      lhsError.localizedDescription == rhsError.localizedDescription
+
+    case let (.networkError(lhsError), .networkError(rhsError)):
+      lhsError.localizedDescription == rhsError.localizedDescription
+
+    case let (.parsingError(lhsError), .parsingError(rhsError)):
+      lhsError.localizedDescription == rhsError.localizedDescription
+
+    case let (.unknownError(lhsError), .unknownError(rhsError)):
+      lhsError.localizedDescription == rhsError.localizedDescription
+
+    default:
+      false
     }
   }
 }

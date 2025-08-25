@@ -23,14 +23,17 @@ public struct CodableCache: CodableCacheProtocol {
       in: .userDomainMask
     ).first,
     _ cacheLifetime: TimeInterval = CodableCache.defaultCacheLifetime,
-    _ cacheFilePrefix: String = "AMNetworkingCache_"
+    _ cacheFilePrefix: String = "AMNetworkingCache_",
+    _ clearOnInit: Bool = true
   ) {
     self.documentDirectory = documentDirectory
     self.cacheLifetime = cacheLifetime
     self.cacheFilePrefix = cacheFilePrefix
 
     // clear all so that on app launch we start fresh
-    clearAllCache()
+    if clearOnInit {
+      clearAllCache()
+    }
   }
 
   public func read<T: Codable>(_ key: String) throws -> T? {
@@ -99,10 +102,10 @@ public struct CodableCache: CodableCacheProtocol {
     let safeKey = sanitizeCacheKey(key)
     return documentDirectory?.appendingPathComponent(cacheFilePrefix + safeKey, isDirectory: false)
   }
-  
+
   private func sanitizeCacheKey(_ key: String) -> String {
     // Replace filesystem-unsafe characters with underscores
-    let unsafeCharacters = CharacterSet(charactersIn: "/\\:*?\"<>|")
+    let unsafeCharacters = CharacterSet(charactersIn: "/\\:*?\"<>|&")
     return key.components(separatedBy: unsafeCharacters).joined(separator: "_")
   }
 
