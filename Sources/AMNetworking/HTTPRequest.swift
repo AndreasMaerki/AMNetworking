@@ -1,14 +1,8 @@
 import Foundation
 
-// Protocol defining what an endpoint should provide
-public protocol EndpointSpec {
-  var path: String { get }
-  var cacheKey: String? { get }
-}
-
 struct HTTPRequest {
   let baseURL: URL
-  let endpoint: EndpointSpec
+  let path: String
   let method: HTTPMethod
   let headers: [String: String]?
   let queryParams: [URLQueryItem]?
@@ -16,14 +10,14 @@ struct HTTPRequest {
 
   init(
     baseURL: URL,
-    endpoint: EndpointSpec,
+    path: String,
     method: HTTPMethod,
     headers: [String: String]? = nil,
     queryParams: [URLQueryItem]? = nil,
     body: Codable? = nil
   ) {
     self.baseURL = baseURL
-    self.endpoint = endpoint
+    self.path = path
     self.method = method
     self.headers = headers
     self.queryParams = queryParams
@@ -37,7 +31,7 @@ struct HTTPRequest {
       urlComponents?.queryItems = queryParams
     }
 
-    guard let url = urlComponents?.url?.appendingPathComponent(endpoint.path) else {
+    guard let url = urlComponents?.url?.appendingPathComponent(path) else {
       throw RequestError.invalidURL
     }
 
@@ -73,19 +67,19 @@ protocol GenericRequest {
 
 struct Get: GenericRequest {
   private let baseURL: URL
-  private let endPoint: EndpointSpec
+  private let path: String
   private let queryParams: [URLQueryItem]?
 
-  init(baseUrl: URL, endPoint: EndpointSpec, queryParams: [URLQueryItem]? = nil) {
+  init(baseUrl: URL, path: String, queryParams: [URLQueryItem]? = nil) {
     baseURL = baseUrl
-    self.endPoint = endPoint
+    self.path = path
     self.queryParams = queryParams
   }
 
   func buildURLRequest() throws(RequestError) -> URLRequest {
     try HTTPRequest(
       baseURL: baseURL,
-      endpoint: endPoint,
+      path: path,
       method: .get,
       queryParams: queryParams
     ).buildURLRequest()
@@ -94,19 +88,19 @@ struct Get: GenericRequest {
 
 struct Post: GenericRequest {
   private let baseURL: URL
-  private let endPoint: EndpointSpec
+  private let path: String
   private let body: Codable
 
-  init(baseURL: URL, endPoint: EndpointSpec, body: Codable) {
+  init(baseURL: URL, path: String, body: Codable) {
     self.baseURL = baseURL
-    self.endPoint = endPoint
+    self.path = path
     self.body = body
   }
 
   func buildURLRequest() throws(RequestError) -> URLRequest {
     try HTTPRequest(
       baseURL: baseURL,
-      endpoint: endPoint,
+      path: path,
       method: .post,
       body: body
     ).buildURLRequest()

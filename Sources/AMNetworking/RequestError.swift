@@ -1,6 +1,6 @@
 import Foundation
 
-enum RequestError: Error, LocalizedError {
+public enum RequestError: Error, LocalizedError {
   case invalidURL
   case missingBody
   case invalidResponse
@@ -20,7 +20,7 @@ enum RequestError: Error, LocalizedError {
   case parsingError(Error)
   case unknownError(Error)
 
-  var errorDescription: String? {
+  public var errorDescription: String? {
     switch self {
     case .invalidURL:
       "The URL is invalid"

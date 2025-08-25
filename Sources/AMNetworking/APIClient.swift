@@ -1,45 +1,52 @@
 import Foundation
 
-struct APIClient {
+public struct APIClient {
   private let baseURL: URL
   private let codableCache: CodableCacheProtocol
   private let validator = HTTPResponseValidator()
   private let decoder: JSONDecoder
-  init(baseURL: URL, codableCache: CodableCacheProtocol = NilCodableCache()) {
+  public init(baseURL: URL) {
     self.baseURL = baseURL
-    self.codableCache = codableCache
+    codableCache = CodableCache()
     decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
   }
 
-  func get<T: Codable>(
-    _ endPoint: EndpointSpec,
-    _ queryItems: [URLQueryItem]? = nil,
+  public func get<T: Codable>(
+    path: String,
+    queryItems: [URLQueryItem]? = nil,
     invalidateCache: Bool = false
   ) async throws(RequestError) -> T {
-    let request = Get(baseUrl: baseURL, endPoint: endPoint, queryParams: queryItems)
-    if invalidateCache, let cacheKey = endPoint.cacheKey {
-      codableCache.invalidateCache(cacheKey)
+    let request = Get(baseUrl: baseURL, path: path, queryParams: queryItems)
+    if invalidateCache {
+      codableCache.invalidateCache(path)
     }
-    return try await performRequest(request, endPoint.cacheKey)
+    return try await performRequest(request, path)
   }
 
-  func clearAllCache() {
+  public func post<T: Codable>(
+    path: String,
+    body: some Codable,
+    queryItems: [URLQueryItem]? = nil
+  ) async throws(RequestError) -> T {
+    let request = Post(baseURL: baseURL, path: path, body: body)
+    return try await performRequest(request, path)
+  }
+
+  public func clearAllCache() {
     codableCache.clearAllCache()
   }
 
   private func performRequest<T: Codable>(
     _ request: GenericRequest,
-    _ cacheKey: String? = nil
+    _ cacheKey: String
   ) async throws(RequestError) -> T {
-    if let cacheKey {
-      do {
-        if let cachedData: T = try codableCache.read(cacheKey) {
-          return cachedData
-        }
-      } catch {
-        throw mapCacheError(error)
+    do {
+      if let cachedData: T = try codableCache.read(cacheKey) {
+        return cachedData
       }
+    } catch {
+      throw mapCacheError(error)
     }
 
     do {
@@ -50,9 +57,7 @@ struct APIClient {
 
       let result = try decoder.decode(T.self, from: data)
 
-      if let cacheKey {
-        codableCache.write(result, to: cacheKey)
-      }
+      codableCache.write(result, to: cacheKey)
       return result
     } catch let error as DecodingError {
       throw .parsingError(error)

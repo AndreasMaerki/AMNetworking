@@ -112,7 +112,7 @@ struct CodableCache: CodableCacheProtocol {
   }
 }
 
-public struct NilCodableCache: CodableCacheProtocol {
+struct NilCodableCache: CodableCacheProtocol {
   func read<T>(_ key: String) throws -> T? where T: Decodable, T: Encodable { nil }
   func write(_ contents: some Codable, to key: String) {}
   func invalidateCache(_ key: String) {}
