@@ -1,12 +1,56 @@
 import Foundation
 
+/// Protocol defining the interface for caching `Codable` objects.
+///
+/// Implementations should provide thread-safe caching with automatic expiration
+/// and the ability to invalidate specific entries or clear all cached data.
 public protocol CodableCacheProtocol {
+  /// Reads a cached object for the given key.
+  ///
+  /// - Parameter key: The cache key to lookup
+  /// - Returns: The cached object if found and still valid, nil otherwise
+  /// - Throws: Decoding errors if cached data is corrupted
   func read<T: Codable>(_ key: String) throws -> T?
+  
+  /// Writes an object to the cache with the given key.
+  ///
+  /// - Parameters:
+  ///   - contents: The object to cache
+  ///   - key: The cache key to store under
   func write(_ contents: some Codable, to key: String)
+  
+  /// Removes a specific cache entry.
+  ///
+  /// - Parameter key: The cache key to invalidate
   func invalidateCache(_ key: String)
+  
+  /// Removes all cache entries and associated metadata.
   func clearAllCache()
 }
 
+/// A file-based cache implementation for `Codable` objects with automatic expiration.
+///
+/// `CodableCache` stores objects as JSON files in the device's document directory
+/// and tracks expiration times using UserDefaults. Cache keys are automatically
+/// sanitized to be filesystem-safe.
+///
+/// ## Features
+/// - Automatic expiration based on configurable TTL
+/// - Thread-safe file operations with atomic writes
+/// - Automatic cache key sanitization for filesystem safety
+/// - Configurable cache file prefix for isolation
+/// - Optional cache clearing on initialization
+///
+/// ## Example Usage
+/// ```swift
+/// let cache = CodableCache()
+/// 
+/// // Write to cache
+/// cache.write(userData, to: "user_123")
+/// 
+/// // Read from cache (returns nil if expired)
+/// let cachedUser: User? = try cache.read("user_123")
+/// ```
 public struct CodableCache: CodableCacheProtocol {
   private static let defaultCacheLifetime: TimeInterval = 60 * 10 // 10 minutes
 
@@ -17,6 +61,13 @@ public struct CodableCache: CodableCacheProtocol {
   private let decoder = JSONDecoder()
   private let encoder = JSONEncoder()
 
+  /// Creates a new file-based cache with the specified configuration.
+  ///
+  /// - Parameters:
+  ///   - documentDirectory: Directory to store cache files. Defaults to system document directory
+  ///   - cacheLifetime: How long cached objects remain valid in seconds. Defaults to 10 minutes
+  ///   - cacheFilePrefix: Prefix for cache filenames to avoid conflicts. Defaults to "AMNetworkingCache_"
+  ///   - clearOnInit: Whether to clear existing cache on initialization. Defaults to true
   init(
     _ documentDirectory: URL? = FileManager.default.urls(
       for: .documentDirectory,
@@ -132,6 +183,20 @@ public struct CodableCache: CodableCacheProtocol {
   }
 }
 
+/// A no-op cache implementation that disables caching entirely.
+///
+/// Use `NilCodableCache` when you want to disable caching behavior,
+/// such as during development or for specific use cases where fresh
+/// data is always required.
+///
+/// ## Example Usage
+/// ```swift
+/// // Create an APIClient with no caching
+/// let client = APIClient(
+///     baseURL: URL(string: "https://api.example.com")!,
+///     cache: NilCodableCache()
+/// )
+/// ```
 public struct NilCodableCache: CodableCacheProtocol {
   public func read<T>(_ key: String) throws -> T? where T: Decodable, T: Encodable { nil }
   public func write(_ contents: some Codable, to key: String) {}

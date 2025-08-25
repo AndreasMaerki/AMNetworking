@@ -1,5 +1,35 @@
 import Foundation
 
+/// Comprehensive error type for all networking-related failures.
+///
+/// `RequestError` provides detailed error information for debugging and user-facing
+/// error messages. Each case includes specific context about what went wrong during
+/// the network request lifecycle.
+///
+/// ## Error Categories
+/// - **Request Building**: `invalidURL`, `missingBody`, `encodingError`
+/// - **Network Issues**: `networkError`
+/// - **HTTP Status Codes**: `unauthorised`, `forbidden`, `notFound`, etc.
+/// - **Response Processing**: `decodingError`, `parsingError`
+/// - **General**: `unknownError`
+///
+/// ## Example Usage
+/// ```swift
+/// do {
+///     let data: User = try await client.get(path: "/user")
+/// } catch let error as RequestError {
+///     switch error {
+///     case .notFound:
+///         print("User not found")
+///     case .networkError(let urlError):
+///         print("Network issue: \(urlError.localizedDescription)")
+///     case .decodingError(let decodingError):
+///         print("Invalid response format: \(decodingError.localizedDescription)")
+///     default:
+///         print("Request failed: \(error.localizedDescription)")
+///     }
+/// }
+/// ```
 public enum RequestError: Error, LocalizedError, Equatable {
   case invalidURL
   case missingBody
