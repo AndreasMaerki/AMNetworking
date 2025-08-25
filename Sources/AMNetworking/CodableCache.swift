@@ -10,6 +10,7 @@ protocol CodableCacheProtocol {
 struct CodableCache: CodableCacheProtocol {
   private let documentDirectory: URL?
   private let cacheLifetime: TimeInterval
+  private let cacheFilePrefix: String
 
   private let decoder = JSONDecoder()
   private let encoder = JSONEncoder()
@@ -19,10 +20,12 @@ struct CodableCache: CodableCacheProtocol {
       for: .documentDirectory,
       in: .userDomainMask
     ).first,
-    _ cacheLifetime: TimeInterval = 60 * 10
+    _ cacheLifetime: TimeInterval = 60 * 10,
+    _ cacheFilePrefix: String = "AMNetworkingCache_"
   ) {
     self.documentDirectory = documentDirectory
     self.cacheLifetime = cacheLifetime
+    self.cacheFilePrefix = cacheFilePrefix
 
     // clear all so that on app launch we start fresh
     clearAllCache()
@@ -72,16 +75,20 @@ struct CodableCache: CodableCacheProtocol {
         includingPropertiesForKeys: nil
       )
 
-      // Remove files that match our cache patterns (events, eventLD*, countries)
+      // Remove files that match our cache prefix
       let cacheFiles = fileURLs.filter { url in
         let fileName = url.lastPathComponent
-        return fileName == "events" ||
-          fileName == "countries" ||
-          fileName.hasPrefix("eventLD")
+        return fileName.hasPrefix(cacheFilePrefix)
       }
 
       for fileURL in cacheFiles {
         try? FileManager.default.removeItem(at: fileURL)
+      }
+
+      // Clear corresponding UserDefaults entries
+      for cacheFile in cacheFiles {
+        let key = String(cacheFile.lastPathComponent.dropFirst(cacheFilePrefix.count))
+        deleteLastFetchTimeFor(key)
       }
     } catch {
       print("Error clearing cache files: \(error)")
@@ -89,7 +96,7 @@ struct CodableCache: CodableCacheProtocol {
   }
 
   private func fileForKey(_ key: String) -> URL? {
-    documentDirectory?.appendingPathComponent(key, isDirectory: false)
+    documentDirectory?.appendingPathComponent(cacheFilePrefix + key, isDirectory: false)
   }
 
   private func needsRefreshFor(_ key: String) -> Bool {
