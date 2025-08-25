@@ -84,9 +84,11 @@ public struct CodableCache: CodableCacheProtocol {
       }
 
       // Clear corresponding UserDefaults entries
+      // Since UserDefaults keys now use the same sanitized format as filenames,
+      // we can map them directly
       for cacheFile in cacheFiles {
-        let key = String(cacheFile.lastPathComponent.dropFirst(cacheFilePrefix.count))
-        deleteLastFetchTimeFor(key)
+        let userDefaultsKey = cacheFile.lastPathComponent
+        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
       }
     } catch {
       // Silently ignore directory reading errors as cache clearing is best-effort
@@ -94,7 +96,14 @@ public struct CodableCache: CodableCacheProtocol {
   }
 
   private func fileForKey(_ key: String) -> URL? {
-    documentDirectory?.appendingPathComponent(cacheFilePrefix + key, isDirectory: false)
+    let safeKey = sanitizeCacheKey(key)
+    return documentDirectory?.appendingPathComponent(cacheFilePrefix + safeKey, isDirectory: false)
+  }
+  
+  private func sanitizeCacheKey(_ key: String) -> String {
+    // Replace filesystem-unsafe characters with underscores
+    let unsafeCharacters = CharacterSet(charactersIn: "/\\:*?\"<>|")
+    return key.components(separatedBy: unsafeCharacters).joined(separator: "_")
   }
 
   private func needsRefreshFor(_ key: String) -> Bool {
@@ -105,15 +114,18 @@ public struct CodableCache: CodableCacheProtocol {
   }
 
   private func saveLastFetchTimeFor(_ key: String) {
-    UserDefaults.standard.set(Date(), forKey: key)
+    let safeKey = sanitizeCacheKey(key)
+    UserDefaults.standard.set(Date(), forKey: cacheFilePrefix + safeKey)
   }
 
   private func deleteLastFetchTimeFor(_ key: String) {
-    UserDefaults.standard.removeObject(forKey: key)
+    let safeKey = sanitizeCacheKey(key)
+    UserDefaults.standard.removeObject(forKey: cacheFilePrefix + safeKey)
   }
 
   private func lastFetchTimeFor(_ key: String) -> Date? {
-    UserDefaults.standard.object(forKey: key) as? Date
+    let safeKey = sanitizeCacheKey(key)
+    return UserDefaults.standard.object(forKey: cacheFilePrefix + safeKey) as? Date
   }
 }
 
