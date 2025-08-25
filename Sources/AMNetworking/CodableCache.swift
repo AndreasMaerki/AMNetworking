@@ -8,6 +8,8 @@ public protocol CodableCacheProtocol {
 }
 
 public struct CodableCache: CodableCacheProtocol {
+  private static let defaultCacheLifetime: TimeInterval = 60 * 10 // 10 minutes
+
   private let documentDirectory: URL?
   private let cacheLifetime: TimeInterval
   private let cacheFilePrefix: String
@@ -20,7 +22,7 @@ public struct CodableCache: CodableCacheProtocol {
       for: .documentDirectory,
       in: .userDomainMask
     ).first,
-    _ cacheLifetime: TimeInterval = 60 * 10,
+    _ cacheLifetime: TimeInterval = CodableCache.defaultCacheLifetime,
     _ cacheFilePrefix: String = "AMNetworkingCache_"
   ) {
     self.documentDirectory = documentDirectory
@@ -38,12 +40,8 @@ public struct CodableCache: CodableCacheProtocol {
     else {
       return nil
     }
-    do {
-      let data = try Data(contentsOf: fileURL)
-      return try decoder.decode(T.self, from: data)
-    } catch {
-      throw RequestError.unknownError(error)
-    }
+    let data = try Data(contentsOf: fileURL)
+    return try decoder.decode(T.self, from: data)
   }
 
   public func write(_ contents: some Codable, to key: String) {

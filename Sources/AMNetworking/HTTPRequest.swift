@@ -52,8 +52,15 @@ struct HTTPRequest {
       let encoder = JSONEncoder()
       do {
         request.httpBody = try encoder.encode(body)
+      } catch let error as EncodingError {
+        throw RequestError.encodingError(error)
       } catch {
-        throw RequestError.encodingError
+        throw RequestError.encodingError(
+          EncodingError.invalidValue(
+            body,
+            EncodingError.Context(codingPath: [], debugDescription: "Unknown encoding error")
+          )
+        )
       }
     }
 
@@ -70,8 +77,8 @@ struct Get: GenericRequest {
   private let path: String
   private let queryParams: [URLQueryItem]?
 
-  init(baseUrl: URL, path: String, queryParams: [URLQueryItem]? = nil) {
-    baseURL = baseUrl
+  init(baseURL: URL, path: String, queryParams: [URLQueryItem]? = nil) {
+    self.baseURL = baseURL
     self.path = path
     self.queryParams = queryParams
   }

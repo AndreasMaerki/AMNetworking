@@ -4,10 +4,9 @@ public enum RequestError: Error, LocalizedError {
   case invalidURL
   case missingBody
   case invalidResponse
-  case encodingError
-  case decodingError
+  case encodingError(EncodingError)
+  case decodingError(DecodingError)
   case networkError(Error)
-  case timeoutError
   case unauthorised
   case forbidden
   case notFound
@@ -16,7 +15,6 @@ public enum RequestError: Error, LocalizedError {
   case badGateway
   case serviceUnavailable
   case unexpectedStatusCode(Int)
-  case invalidStatusCode(Int)
   case parsingError(Error)
   case unknownError(Error)
 
@@ -28,14 +26,12 @@ public enum RequestError: Error, LocalizedError {
       "Request body is required for this method"
     case .invalidResponse:
       "Invalid response from server"
-    case .encodingError:
-      "Failed to encode request body"
-    case .decodingError:
-      "Failed to decode response body"
+    case let .encodingError(error):
+      "Failed to encode request body: \(error.localizedDescription)"
+    case let .decodingError(error):
+      "Failed to decode response body: \(error.localizedDescription)"
     case let .networkError(error):
       "Network error: \(error.localizedDescription)"
-    case .timeoutError:
-      "The request timed out"
     case .unauthorised:
       "Unauthorised: Authentication is required and has failed or has not yet been provided"
     case .forbidden:
@@ -56,8 +52,6 @@ public enum RequestError: Error, LocalizedError {
       "Parsing error: \(error.localizedDescription)"
     case let .unknownError(error):
       "Unknown error: \(error.localizedDescription)"
-    case let .invalidStatusCode(statusCode):
-      "Status code invalid or not present in the 4xx-5xx range: \(statusCode)"
     }
   }
 

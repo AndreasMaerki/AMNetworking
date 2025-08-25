@@ -7,7 +7,7 @@ struct HTTPResponseValidator {
     }
 
     guard (200 ... 299).contains(statusCode) else {
-      throw RequestError.unexpectedStatusCode(statusCode)
+      throw RequestError(statusCode: statusCode)
     }
   }
 }
