@@ -1,13 +1,13 @@
 import Foundation
 
-protocol CodableCacheProtocol {
+public protocol CodableCacheProtocol {
   func read<T: Codable>(_ key: String) throws -> T?
   func write(_ contents: some Codable, to key: String)
   func invalidateCache(_ key: String)
   func clearAllCache()
 }
 
-struct CodableCache: CodableCacheProtocol {
+public struct CodableCache: CodableCacheProtocol {
   private let documentDirectory: URL?
   private let cacheLifetime: TimeInterval
   private let cacheFilePrefix: String
@@ -31,7 +31,7 @@ struct CodableCache: CodableCacheProtocol {
     clearAllCache()
   }
 
-  func read<T: Codable>(_ key: String) throws -> T? {
+  public func read<T: Codable>(_ key: String) throws -> T? {
     guard !needsRefreshFor(key) else { return nil }
     guard let fileURL = fileForKey(key),
           FileManager.default.fileExists(atPath: fileURL.path)
@@ -46,7 +46,7 @@ struct CodableCache: CodableCacheProtocol {
     }
   }
 
-  func write(_ contents: some Codable, to key: String) {
+  public func write(_ contents: some Codable, to key: String) {
     guard let fileURL = fileForKey(key) else {
       return
     }
@@ -57,7 +57,7 @@ struct CodableCache: CodableCacheProtocol {
     saveLastFetchTimeFor(key)
   }
 
-  func invalidateCache(_ key: String) {
+  public func invalidateCache(_ key: String) {
     guard let fileURL = fileForKey(key) else {
       return
     }
@@ -65,7 +65,7 @@ struct CodableCache: CodableCacheProtocol {
     deleteLastFetchTimeFor(key)
   }
 
-  func clearAllCache() {
+  public func clearAllCache() {
     // Clear all cache files
     guard let documentDirectory else { return }
 
@@ -119,9 +119,9 @@ struct CodableCache: CodableCacheProtocol {
   }
 }
 
-struct NilCodableCache: CodableCacheProtocol {
-  func read<T>(_ key: String) throws -> T? where T: Decodable, T: Encodable { nil }
-  func write(_ contents: some Codable, to key: String) {}
-  func invalidateCache(_ key: String) {}
-  func clearAllCache() {}
+public struct NilCodableCache: CodableCacheProtocol {
+  public func read<T>(_ key: String) throws -> T? where T: Decodable, T: Encodable { nil }
+  public func write(_ contents: some Codable, to key: String) {}
+  public func invalidateCache(_ key: String) {}
+  public func clearAllCache() {}
 }

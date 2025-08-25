@@ -5,11 +5,23 @@ public struct APIClient {
   private let codableCache: CodableCacheProtocol
   private let validator = HTTPResponseValidator()
   private let decoder: JSONDecoder
-  public init(baseURL: URL) {
+
+  public init(
+    baseURL: URL,
+    decoder: JSONDecoder? = nil,
+    cache: CodableCacheProtocol? = nil
+  ) {
     self.baseURL = baseURL
-    codableCache = CodableCache()
-    decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .iso8601
+
+    if let decoder {
+      self.decoder = decoder
+    } else {
+      let defaultDecoder = JSONDecoder()
+      defaultDecoder.dateDecodingStrategy = .iso8601
+      self.decoder = defaultDecoder
+    }
+
+    codableCache = cache ?? CodableCache()
   }
 
   public func get<T: Codable>(
