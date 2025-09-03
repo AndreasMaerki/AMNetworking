@@ -7,6 +7,7 @@ A modern, lightweight Swift networking library with built-in caching and robust 
 ## Features
 
 - ✅ **Modern async/await API** - Clean, readable networking code
+- ✅ **Built-in Authentication** - Basic auth and Bearer token support
 - ✅ **Built-in Response Caching** - Automatic caching with configurable TTL
 - ✅ **Type-Safe Error Handling** - Comprehensive error types with detailed information
 - ✅ **Dependency Injection** - Flexible initialization with custom decoders and caches
@@ -21,14 +22,14 @@ Add AMNetworking to your project using Xcode:
 
 1. **File → Add Package Dependencies**
 2. **Enter URL**: `https://github.com/AndreasMaerki/AMNetworking.git`
-3. **Select version**: `1.0.0` or later
+3. **Select version**: `1.2.0` or later
 4. **Add to your target**
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AndreasMaerki/AMNetworking.git", from: "1.0.0")
+    .package(url: "https://github.com/AndreasMaerki/AMNetworking.git", from: "1.2.0")
 ]
 ```
 
@@ -64,6 +65,40 @@ do {
 }
 ```
 
+## Authentication
+
+### Basic Authentication
+
+```swift
+import AMNetworking
+
+// Basic auth with username and password
+let basicAuth = BasicAuthProvider(username: "your-username", password: "your-password")
+let client = APIClient(
+    baseURL: URL(string: "https://api.example.com")!,
+    authentication: basicAuth
+)
+
+// All requests automatically include authentication headers
+let users: [User] = try await client.get(path: "/users")
+```
+
+### Bearer Token Authentication
+
+```swift
+import AMNetworking
+
+// Bearer token (JWT, API key, etc.)
+let tokenAuth = BearerTokenProvider(token: "your-jwt-token")
+let client = APIClient(
+    baseURL: URL(string: "https://api.example.com")!,
+    authentication: tokenAuth
+)
+
+// All requests automatically include Authorization: Bearer header
+let profile: UserProfile = try await client.get(path: "/profile")
+```
+
 ## Advanced Usage
 
 ### Custom Configuration
@@ -81,11 +116,13 @@ let customCache = CodableCache(
     "MyApp_" // custom cache prefix
 )
 
-// Initialize with custom configuration
+// Initialize with custom configuration and authentication
+let auth = BearerTokenProvider(token: "api-token")
 let client = APIClient(
     baseURL: baseURL,
     decoder: decoder,
-    cache: customCache
+    cache: customCache,
+    authentication: auth
 )
 ```
 
