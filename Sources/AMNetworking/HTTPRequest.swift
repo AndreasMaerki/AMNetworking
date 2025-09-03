@@ -7,6 +7,7 @@ struct HTTPRequest {
   let headers: [String: String]?
   let queryParams: [URLQueryItem]?
   let body: Codable?
+  let authentication: AuthenticationProvider?
 
   init(
     baseURL: URL,
@@ -14,7 +15,8 @@ struct HTTPRequest {
     method: HTTPMethod,
     headers: [String: String]? = nil,
     queryParams: [URLQueryItem]? = nil,
-    body: Codable? = nil
+    body: Codable? = nil,
+    authentication: AuthenticationProvider? = nil
   ) {
     self.baseURL = baseURL
     self.path = path
@@ -22,6 +24,7 @@ struct HTTPRequest {
     self.headers = headers
     self.queryParams = queryParams
     self.body = body
+    self.authentication = authentication
   }
 
   func buildURLRequest() throws(RequestError) -> URLRequest {
@@ -41,8 +44,15 @@ struct HTTPRequest {
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
     request.addValue("application/json", forHTTPHeaderField: "Accept")
 
+    // Add authentication headers first
+    if let authentication {
+      let authHeaders = authentication.authenticationHeaders()
+      authHeaders.forEach { request.setValue($0.value, forHTTPHeaderField: $0.key) }
+    }
+
+    // Add custom headers (these can override authentication headers if needed)
     if let headers {
-      headers.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
+      headers.forEach { request.setValue($0.value, forHTTPHeaderField: $0.key) }
     }
 
     if method.requiresBody {
@@ -76,11 +86,13 @@ struct Get: GenericRequest {
   private let baseURL: URL
   private let path: String
   private let queryParams: [URLQueryItem]?
+  private let authentication: AuthenticationProvider?
 
-  init(baseURL: URL, path: String, queryParams: [URLQueryItem]? = nil) {
+  init(baseURL: URL, path: String, queryParams: [URLQueryItem]? = nil, authentication: AuthenticationProvider? = nil) {
     self.baseURL = baseURL
     self.path = path
     self.queryParams = queryParams
+    self.authentication = authentication
   }
 
   func buildURLRequest() throws(RequestError) -> URLRequest {
@@ -88,7 +100,8 @@ struct Get: GenericRequest {
       baseURL: baseURL,
       path: path,
       method: .get,
-      queryParams: queryParams
+      queryParams: queryParams,
+      authentication: authentication
     ).buildURLRequest()
   }
 }
@@ -97,11 +110,13 @@ struct Post: GenericRequest {
   private let baseURL: URL
   private let path: String
   private let body: Codable
+  private let authentication: AuthenticationProvider?
 
-  init(baseURL: URL, path: String, body: Codable) {
+  init(baseURL: URL, path: String, body: Codable, authentication: AuthenticationProvider? = nil) {
     self.baseURL = baseURL
     self.path = path
     self.body = body
+    self.authentication = authentication
   }
 
   func buildURLRequest() throws(RequestError) -> URLRequest {
@@ -109,7 +124,8 @@ struct Post: GenericRequest {
       baseURL: baseURL,
       path: path,
       method: .post,
-      body: body
+      body: body,
+      authentication: authentication
     ).buildURLRequest()
   }
 }

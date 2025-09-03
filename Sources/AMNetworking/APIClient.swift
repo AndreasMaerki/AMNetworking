@@ -21,6 +21,7 @@ public struct APIClient {
   private let codableCache: CodableCacheProtocol
   private let validator = HTTPResponseValidator()
   private let decoder: JSONDecoder
+  private let authentication: AuthenticationProvider?
 
   /// Creates a new API client with the specified configuration.
   ///
@@ -28,11 +29,20 @@ public struct APIClient {
   ///   - baseURL: The base URL for all API requests
   ///   - decoder: Custom JSON decoder. If nil, uses a default decoder with ISO8601 date strategy
   ///   - cache: Custom cache implementation. If nil, uses the default file-based cache
+  ///   - authentication: Authentication provider for requests. If nil, no authentication headers are added
   ///
   /// ## Example
   /// ```swift
   /// // Basic initialization
   /// let client = APIClient(baseURL: URL(string: "https://api.example.com")!)
+  ///
+  /// // With basic authentication
+  /// let basicAuth = BasicAuthProvider(username: "user", password: "pass")
+  /// let client = APIClient(baseURL: baseURL, authentication: basicAuth)
+  ///
+  /// // With bearer token authentication
+  /// let tokenAuth = BearerTokenProvider(token: "your-jwt-token")
+  /// let client = APIClient(baseURL: baseURL, authentication: tokenAuth)
   ///
   /// // With custom decoder
   /// let decoder = JSONDecoder()
@@ -45,9 +55,11 @@ public struct APIClient {
   public init(
     baseURL: URL,
     decoder: JSONDecoder? = nil,
-    cache: CodableCacheProtocol? = nil
+    cache: CodableCacheProtocol? = nil,
+    authentication: AuthenticationProvider? = nil
   ) {
     self.baseURL = baseURL
+    self.authentication = authentication
 
     if let decoder {
       self.decoder = decoder
@@ -90,7 +102,7 @@ public struct APIClient {
     queryItems: [URLQueryItem]? = nil,
     invalidateCache: Bool = false
   ) async throws(RequestError) -> T {
-    let request = Get(baseURL: baseURL, path: path, queryParams: queryItems)
+    let request = Get(baseURL: baseURL, path: path, queryParams: queryItems, authentication: authentication)
     if invalidateCache {
       codableCache.invalidateCache(path)
     }
@@ -125,7 +137,7 @@ public struct APIClient {
     body: some Codable,
     queryItems: [URLQueryItem]? = nil
   ) async throws(RequestError) -> T {
-    let request = Post(baseURL: baseURL, path: path, body: body)
+    let request = Post(baseURL: baseURL, path: path, body: body, authentication: authentication)
     return try await performRequest(request, path)
   }
 
