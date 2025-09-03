@@ -11,19 +11,19 @@ public protocol CodableCacheProtocol {
   /// - Returns: The cached object if found and still valid, nil otherwise
   /// - Throws: Decoding errors if cached data is corrupted
   func read<T: Codable>(_ key: String) throws -> T?
-  
+
   /// Writes an object to the cache with the given key.
   ///
   /// - Parameters:
   ///   - contents: The object to cache
   ///   - key: The cache key to store under
   func write(_ contents: some Codable, to key: String)
-  
+
   /// Removes a specific cache entry.
   ///
   /// - Parameter key: The cache key to invalidate
   func invalidateCache(_ key: String)
-  
+
   /// Removes all cache entries and associated metadata.
   func clearAllCache()
 }
@@ -44,16 +44,14 @@ public protocol CodableCacheProtocol {
 /// ## Example Usage
 /// ```swift
 /// let cache = CodableCache()
-/// 
+///
 /// // Write to cache
 /// cache.write(userData, to: "user_123")
-/// 
+///
 /// // Read from cache (returns nil if expired)
 /// let cachedUser: User? = try cache.read("user_123")
 /// ```
 public struct CodableCache: CodableCacheProtocol {
-  private static let defaultCacheLifetime: TimeInterval = 60 * 10 // 10 minutes
-
   private let documentDirectory: URL?
   private let cacheLifetime: TimeInterval
   private let cacheFilePrefix: String
@@ -68,12 +66,12 @@ public struct CodableCache: CodableCacheProtocol {
   ///   - cacheLifetime: How long cached objects remain valid in seconds. Defaults to 10 minutes
   ///   - cacheFilePrefix: Prefix for cache filenames to avoid conflicts. Defaults to "AMNetworkingCache_"
   ///   - clearOnInit: Whether to clear existing cache on initialization. Defaults to true
-  init(
+  public init(
     _ documentDirectory: URL? = FileManager.default.urls(
       for: .documentDirectory,
       in: .userDomainMask
     ).first,
-    _ cacheLifetime: TimeInterval = CodableCache.defaultCacheLifetime,
+    _ cacheLifetime: TimeInterval = 60 * 10,
     _ cacheFilePrefix: String = "AMNetworkingCache_",
     _ clearOnInit: Bool = true
   ) {
@@ -198,6 +196,7 @@ public struct CodableCache: CodableCacheProtocol {
 /// )
 /// ```
 public struct NilCodableCache: CodableCacheProtocol {
+  public init() {}
   public func read<T>(_ key: String) throws -> T? where T: Decodable, T: Encodable { nil }
   public func write(_ contents: some Codable, to key: String) {}
   public func invalidateCache(_ key: String) {}
